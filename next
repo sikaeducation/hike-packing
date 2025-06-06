@@ -1,0 +1,98 @@
+#!/bin/bash
+
+git config advice.detachedHead false
+ERROR_COUNT=`cat .state/error-count`
+PASSING=1
+
+git checkout -q packing
+
+report_error() {
+    PASSING=0
+    ((ERROR_COUNT+=1))
+    echo "${ERROR_COUNT}" > .state/error-count
+    echo $1
+    git checkout -q packing
+    exit 1
+}
+
+check_commit() {
+  STATUS=`git status`
+  if [[ -n "${STATUS}" ]]; then
+    PASSING=0
+    ((ERROR_COUNT+=1))
+    echo "${ERROR_COUNT}" > .state/error-count
+    echo "Oops! Make sure to commit every file."
+    exit 1
+  fi
+}
+
+check_commit_count() {
+    COMMIT_COUNT=`git rev-list --count HEAD`
+    if [[ "${COMMIT_COUNT}" -lt 4 ]]; then
+        report_error "Oops! You have too few commits."
+    fi
+    if [[ "${COMMIT_COUNT}" -gt 4 ]]; then
+        report_error "Oops! You have too many commits."
+    fi
+}
+
+check_first_commit() {
+    git checkout -q packing~2
+
+    if [[ -d 'clothes' ]]; then
+        report_error "Oops! The clothes directory shouldn't be included in the first commit. Reset the commit and try again."
+    fi
+    if [[ -d 'food' ]]; then
+        report_error "Oops! The food directory shouldn't be included in the first commit. Reset the commit and try again."
+    fi
+    if [[ ! -d 'shelter' ]]; then
+        report_error "Oops! The shelter directory should be included in the first commit."
+    fi
+    if [[ ! -f 'shelter/tarp' ]]; then
+        report_error "Oops! The shelter directory doesn't contain the correct files in the first commit."
+    fi
+}
+
+check_second_commit() {
+    git checkout -q packing~1
+
+    if [[ -d 'shelter/food' ]]; then
+        report_error "Oops! The food directory shouldn't be included in the second commit. Reset the commit and try again."
+    fi
+    if [[ ! -f 'shelter/tarp' ]]; then
+        report_error "Oops! The shelter directory doesn't contain the correct files in the second commit."
+    fi
+    if [[ ! -d 'clothes' ]]; then
+        report_error "Oops! The clothes directory should be included in the second commit."
+    fi
+    if [[ ! -f 'clothes/hiking-boots' ]] || [[ ! -f 'clothes/rain-jacket' ]] ; then
+        report_error "Oops! The clothes directory doesn't contain the correct files in the second commit."
+    fi
+}
+
+check_third_commit() {
+    git checkout -q packing
+
+    if [[ ! -f 'shelter/tarp' ]]; then
+        report_error "Oops! The shelter directory doesn't contain the correct files in the third commit."
+    fi
+    if [[ ! -f 'clothes/hiking-boots' ]] || [[ ! -f 'clothes/rain-jacket' ]] ; then
+        report_error "Oops! The clothes directory doesn't contain the correct files in the third commit."
+    fi
+    if [[ ! -d 'food' ]]; then
+        report_error "Oops! The food directory should be included in the third commit."
+    fi
+    if [[ ! -f 'food/gorp' ]] || [[ ! -f 'food/dried-fruit' ]] ; then
+        report_error "Oops! The food directory doesn't contain the correct files in the third commit."
+    fi
+}
+
+check_commit
+check_commit_count
+check_first_commit
+check_second_commit
+check_third_commit
+
+if [[ "${PASSING}" -eq 1 ]]; then
+    echo "Victory! You can rebuild big commits into smaller ones. Run './new-game' to play the game again."
+fi

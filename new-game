@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo "*************"
+echo "HIKE PACKING"
+echo "*************"
+echo -e "\n"
+echo "The most recent commit in this branch is too big. Split it into 3 separate commits as follows:"
+echo "  * The first commit should include the files in './shelter'"
+echo "  * The second commit should include the files in './clothes'"
+echo "  * The third commit should include the files in './food'"
+echo -e "\n"
+echo "When you're done, commit your work and run ./next to check it!"
+
+git checkout -q main
+rm -rf clothes food shelter
+git branch -q -D packing &>/dev/null
+git checkout -q -b packing
+cp -r .seed/* .
+git add -A
+git commit -q -m "Break up this commit"
+
+rm -rf .state
+mkdir .state
+touch .state/error-count
+echo "0" > .state/error-count

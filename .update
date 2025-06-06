@@ -1,0 +1,5 @@
+#!/bin/bash
+
+git checkout main
+rm -rf clothes shelter food
+git add -A && git commit --amend --no-edit && git push -f
